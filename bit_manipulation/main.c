@@ -1,40 +1,75 @@
 #include "header.h"
-int main() {
-    clock_t start, end;
-    double time;
-    start = clock();
-int sudoku[16][16] = {
-    {16, 7, 13, 6,  9, 0, 12, 2,  4, 10, 14, 8,  11, 15, 1, 5},
-    {12, 0, 2, 9,  5, 1, 15, 11,  7, 0, 16, 6,  10, 14, 4, 0},
-    {15, 1, 0, 5,  8, 4, 14, 10,  3, 2, 12, 9,  13, 16, 0, 6},
-    {0, 4, 10, 8,  6, 7, 16, 13,  1, 11, 0, 5,  2, 0, 3, 9},
-
-    {4, 0, 14, 0,  10, 6, 0, 16,  5, 15, 1, 2,  12, 3, 9, 13},
-    {1, 5, 0, 2,  11, 8, 4, 14,  0, 12, 3, 13,  0, 7, 6, 10},
-    {0, 6, 16, 10,  0, 9, 3, 12,  8, 14, 4, 11,  15, 0, 5, 2},
-    {3, 9, 12, 13,  2, 5, 0, 15,  6, 0, 7, 10,  14, 4, 0, 11},
-
-    {5, 2, 1, 0,  15, 11, 8, 4,  13, 3, 9, 16,  7, 6, 10, 0},
-    {9, 0, 3, 16,  0, 2, 5, 1,  10, 7, 6, 14,  0, 8, 11, 15},
-    {6, 10, 7, 14,  16, 13, 0, 3,  11, 0, 8, 15,  1, 5, 2, 0},
-    {8, 11, 4, 15,  0, 10, 6, 7,  2, 1, 0, 12,  3, 0, 13, 16},
-
-    {13, 16, 9, 7,  3, 0, 2, 5,  14, 6, 10, 4,  8, 0, 15, 1},
-    {10, 14, 6, 0,  7, 16, 13, 9,  15, 8, 0, 1,  5, 2, 12, 3},
-    {0, 15, 8, 1,  4, 14, 10, 6,  12, 5, 0, 3,  9, 13, 16, 7},
-    {2, 12, 5, 3,  1, 0, 11, 0,  16, 9, 13, 7,  0, 10, 14, 4}
-};
-
-    int n = 16;
-    if (!solve_bitmanipulation(n, sudoku)) {
-        printf("incorrect sudoku puzzle\n");
-        end = clock();
-        time = (double) (end-start)/CLOCKS_PER_SEC;
-        printf("execution time is:\n%f\n", time);
-        return 0;
+#include "logic.c"
+void readAndSolveSudoku(const char *filename) {
+    FILE *file = fopen(filename, "r");
+    if (!file) {
+        perror("Failed to open Sudoku file");
+        return;
     }
-    print_sudoku(n, sudoku);
-    end = clock();
-    time = (double) (end-start)/CLOCKS_PER_SEC;
-    printf("execution time is:\n%f\n", time);
+
+    int m;
+    if (fscanf(file, "%d", &m) != 1) {
+        printf("Invalid Sudoku format in file: %s\n", filename);
+        fclose(file);
+        return;
+    }
+
+    int board[m][m];
+    for (int i = 0; i < m; i++) {
+        for (int j = 0; j < m; j++) {
+            if (fscanf(file, "%d", &board[i][j]) != 1) {
+                printf("Invalid Sudoku format in file: %s\n", filename);
+                fclose(file);
+                return;
+            }
+        }
+    }
+    fclose(file);
+
+    // Solve the Sudoku
+    printf("Solving Sudoku from file: %s\n", filename);
+    if (!solve_bitmanipulation(m, board)) {
+        printf("incorrect sudoku puzzle\n");
+        return;
+    }
+    print_sudoku(m, board);
+}
+
+int main() {
+    char filename[256];
+    FILE *fileList = fopen("file_list.txt", "r");
+    if (!fileList) {
+        perror("Failed to open file list");
+        return 1;
+    }
+
+    printf("Available Sudoku files:\n");
+    while (fgets(filename, sizeof(filename), fileList)) {
+        // Remove newline character
+        filename[strcspn(filename, "\n")] = '\0';
+        printf("%s\n", filename);
+    }
+    rewind(fileList); // Reset the file pointer to the start
+
+    char selectedFile[256];
+    printf("Enter the name of the Sudoku file to solve: ");
+    scanf("%255s", selectedFile);
+
+    int found = 0;
+    while (fgets(filename, sizeof(filename), fileList)) {
+        filename[strcspn(filename, "\n")] = '\0';
+        if (strcmp(filename, selectedFile) == 0) {
+            found = 1;
+            break;
+        }
+    }
+    fclose(fileList);
+
+    if (found) {
+        readAndSolveSudoku(selectedFile);
+    } else {
+        printf("File %s not found in the list.\n", selectedFile);
+    }
+
+    return 0;
 }
