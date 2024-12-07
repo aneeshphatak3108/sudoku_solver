@@ -135,7 +135,7 @@ void free_sudoku(Sudoku *sudoku){
     }
     free(sudoku ->box);
     sudoku -> size = 0;
-    free(sudoku);
+    sudoku->box = NULL;
     return;
 }
 
